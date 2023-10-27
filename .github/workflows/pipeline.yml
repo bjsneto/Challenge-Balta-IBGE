@@ -1,0 +1,51 @@
+name: Challange Balta IBGE
+
+on:
+  push:
+    branches: [ "master" ]
+  
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+      
+    steps:
+    - uses: actions/checkout@v3
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '7.0.x'
+    - uses: microsoft/variable-substitution@v1 
+      with:
+        files: '**/appsettings.json'
+      env:
+        ConnectionStrings.DefaultConnection: ${{ secrets.CONNECTION_STRING }}
+        Jwt.Issuer: ${{ secrets.ISSUER }}
+        Jwt.Audience: ${{ secrets.AUDIENCE }}
+        Jwt.Key: ${{ secrets.KEY }}
+        working-directory: Challenge.Balta.IBGE
+      
+    - name: Restore dependencies
+      run: dotnet restore
+      working-directory: Challenge.Balta.IBGE
+     
+    - name: Build
+      run: dotnet build --no-restore
+      working-directory: Challenge.Balta.IBGE
+    
+    - name: Test
+      run: dotnet test --no-build --verbosity normal
+      working-directory: Challenge.Balta.IBGE
+      
+  deploy:
+      name: Deploy
+      needs: [Build]
+      runs-on: ubuntu-latest
+
+      steps:
+      - name: Deploy to production
+        uses: johnbeynon/render-deploy-action@v0.0.8
+        with:
+          service-id: ${{ secrets.SERVICE_ID }}
+          api-key: ${{ secrets.RENDER_API_KEY }}
+
